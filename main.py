@@ -2,29 +2,33 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
 import os
+import sys
 from update_checker import checkUpdate
 import threading
 import time
 
 root = tk.Tk()
-def long_task():
-    for i in range(5):
-        info_text.insert(tk.END, f"Downloading... {i+1}\n")
-        info_text.see(tk.END)
-        time.sleep(1)
-def start_task():
-    threading.Thread(target=long_task).start()
+
+# تحديد مسار البرنامج سواء EXE أو تشغيل عادي
+if getattr(sys, 'frozen', False):
+    BASE_PATH = sys._MEIPASS
+else:
+    BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+
+# قراءة الإصدار من version.txt
+def read_version():
+    version_file_path = os.path.join(BASE_PATH, "version.txt")
+    with open(version_file_path, "r", encoding="utf-8") as f:
+        return f.read().split('"')[1]
 def print_info(msg):
     info_text.insert(tk.END,msg + "\n")
     info_text.see(tk.END)
 
 def start_update_thread():
     threading.Thread(target=lambda: checkUpdate(version_label, print_info)).start()
-    
+
 def browser_file():
-    
     file = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
-    
     selected_file_entry.delete(0,tk.END)
     selected_file_entry.insert(0,file)
     return file
@@ -45,11 +49,11 @@ def excute():
     if not new_file:
         messagebox.showerror("خطأ", "اسم الملف فارغ!")
         return
-
     if not file:
        messagebox.showerror("خطأ", "المسار فارغ!")
        return
-    with open(file, "r") as f:
+
+    with open(file, "r", encoding="utf-8") as f:
         lines = f.readlines()
         if not lines:
             messagebox.showerror("خطأ", "الملف فارغ!")
@@ -60,39 +64,42 @@ def excute():
                     number_only = line.strip()[len(prefix):]
                     if len(number_only) == 9:
                         line = line.replace(prefix,"966", 1)
-                    
                         break
             line_modified.append(line)
-    with open(new_path, "w") as f:
+
+    with open(new_path, "w", encoding="utf-8") as f:
         for line in line_modified:
             f.write(line)
     info_text.insert(tk.END, f"عدد السطور المعالجة: {len(line_modified)}\n")
 
 def current_version_display():
-    with open ("version.txt", "r") as f:
-        return f.read().split('"')[1]
-root.geometry("300x300")
+    return read_version()
 
-#-----[Disable window resizeable]
+root.geometry("300x300")
 root.resizable(False,False)
-#-----[btn]-----#
+root.title("PFixer")
+icon_path = os.path.join(BASE_PATH, "favicon.ico")
+root.iconbitmap(icon_path)
+#-----[الأزرار والواجهه]-----
 btn = tk.Button(root, text="استعراض", command=browser_file)
 btn.place(x=10, y=10, width=80,height=25)
-#-----[Entry browse file name]-----#
+
 selected_file_entry = tk.Entry(root)
 selected_file_entry.place(x=100, y=10, width=190, height=25)
-#-----[Entry New file name]-----#
+
 new_file_entry = tk.Entry(root)
 new_file_entry.place(x=10, y=50, width=190, height=25)
-#-----[Excute btn]-----#
+
 excute_btn = tk.Button(root, text="تنفيذ", command=excute)
 excute_btn.place(x=210, y=50, width=80, height=25)
-#-----[process]-----#
+
 info_text = tk.Text(root)
 info_text.place(x=10, y=130, width=280, height=130)
-#-----[update Check]-----#
+
 update_btn = tk.Button(root,text="تحديث", command=start_update_thread)
 update_btn.place(x=150, y=265, width=80, height=25)
+
 version_label = tk.Label(root, text=f"Current Version: [{current_version_display()}]")
 version_label.place(x=5, y=265, width=150, height=25)
+
 root.mainloop()

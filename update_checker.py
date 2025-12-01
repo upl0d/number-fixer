@@ -1,8 +1,20 @@
 import requests
-def checkUpdate(version_label,print_info):
+import os
+import sys
+import pkgutil
 
-    with open("version.txt", "r") as f:
-        current_version = f.read().split('"')[1]
+if getattr(sys, 'frozen', False):
+    BASE_PATH = sys._MEIPASS
+else:
+    BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+def read_version():
+    data = pkgutil.get_data(__name__, "version.txt")
+    return data.decode("utf-8").split('"')[1]
+def checkUpdate(version_label,print_info):
+    version_file_path = os.path.join(BASE_PATH, "version.txt")
+
+    with open(version_file_path, "r") as f:
+        current_version = read_version()
     urlVersion = requests.get("https://raw.githubusercontent.com/upl0d/number-fixer/main/version.txt")
     if not urlVersion.status_code == 200:
         version_label.config(text="Error connection")
