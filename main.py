@@ -2,8 +2,25 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
 import os
-root = tk.Tk()
+from update_checker import checkUpdate
+import threading
+import time
 
+root = tk.Tk()
+def long_task():
+    for i in range(5):
+        info_text.insert(tk.END, f"Downloading... {i+1}\n")
+        info_text.see(tk.END)
+        time.sleep(1)
+def start_task():
+    threading.Thread(target=long_task).start()
+def print_info(msg):
+    info_text.insert(tk.END,msg + "\n")
+    info_text.see(tk.END)
+
+def start_update_thread():
+    threading.Thread(target=lambda: checkUpdate(version_label, print_info)).start()
+    
 def browser_file():
     
     file = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
@@ -12,7 +29,7 @@ def browser_file():
     selected_file_entry.insert(0,file)
     return file
 
-def excute_btn():
+def excute():
     info_text.delete(1.0, tk.END)
 
     prefixes = ("00966","5","05")
@@ -51,6 +68,9 @@ def excute_btn():
             f.write(line)
     info_text.insert(tk.END, f"عدد السطور المعالجة: {len(line_modified)}\n")
 
+def current_version_display():
+    with open ("version.txt", "r") as f:
+        return f.read().split('"')[1]
 root.geometry("300x300")
 
 #-----[Disable window resizeable]
@@ -65,12 +85,14 @@ selected_file_entry.place(x=100, y=10, width=190, height=25)
 new_file_entry = tk.Entry(root)
 new_file_entry.place(x=10, y=50, width=190, height=25)
 #-----[Excute btn]-----#
-excute_btn = tk.Button(root, text="تنفيذ", command=excute_btn)
+excute_btn = tk.Button(root, text="تنفيذ", command=excute)
 excute_btn.place(x=210, y=50, width=80, height=25)
 #-----[process]-----#
 info_text = tk.Text(root)
-info_text.place(x=10, y=130, width=280, height=160)
-#-----[Logic]-----#
-
-    
+info_text.place(x=10, y=130, width=280, height=130)
+#-----[update Check]-----#
+update_btn = tk.Button(root,text="تحديث", command=start_update_thread)
+update_btn.place(x=150, y=265, width=80, height=25)
+version_label = tk.Label(root, text=f"Current Version: [{current_version_display()}]")
+version_label.place(x=5, y=265, width=150, height=25)
 root.mainloop()
